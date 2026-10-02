@@ -1,4 +1,5 @@
 import { Wall } from '../types';
+import { ThicknessField } from './ThicknessField';
 import './SidePanel.css';
 
 interface SidePanelProps {
@@ -11,29 +12,8 @@ interface SidePanelProps {
 export function SidePanel({ walls, selectedId, onSelect, onThickness }: SidePanelProps) {
   const selected = walls.find((w) => w.id === selectedId);
 
-  // input for editing the thickness of the selected wall
-  const ThicknessField = () => {
-    if (!selected) return null;
-    return (
-      <input
-        type="number"
-        step="0.05"
-        value={selected.thickness}
-        onChange={(e) => onThickness(selected.id, parseFloat(e.target.value) || 0)}
-        style={{
-          width: '100%',
-          padding: '6px 8px',
-          border: '1px solid #ccc',
-          borderRadius: 4,
-          boxSizing: 'border-box',
-          background: '#ffffff',
-        }}
-      />
-    );
-  };
-
   return (
-    <div className="panel" style={{ background: '#ececec', paddingTop: 6 }}>
+    <div className="panel">
       <h2>Walls</h2>
       <div>
         {walls.map((w, i) => (
@@ -49,11 +29,11 @@ export function SidePanel({ walls, selectedId, onSelect, onThickness }: SidePane
       {selected && (
         <div>
           <div className="field-label">LENGTH</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
+          <div className="field-value">
             {selected.length.toFixed(1)} ft
           </div>
           <div className="field-label">THICKNESS (FT)</div>
-          <ThicknessField />
+          <ThicknessField wall={selected} onThickness={onThickness} />
         </div>
       )}
     </div>

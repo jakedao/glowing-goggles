@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Point, Viewport, Wall } from '../types';
-import { dist, SNAP_DIST, wallPolygon } from '../utils/geometry';
+import { dist, projectPointOnSegment, wallPolygon } from '../utils/geometry';
+import { ENDPOINT_SNAP_PX, TJUNCTION_SNAP_PX } from '../constants/snapping';
 import './Editor.css';
 
 interface EditorProps {
@@ -63,7 +64,6 @@ export function Editor({ walls, selectedId, tool, onSelect, onMoveEndpoint }: Ed
 
   // when mouse moved
   const handlePointerMove = (e: any) => {
-    console.log('pointer move',e)
     if (panning) {
       setViewport({ 
         ...viewport,
@@ -73,20 +73,48 @@ export function Editor({ walls, selectedId, tool, onSelect, onMoveEndpoint }: Ed
       lastPos.current = { x: e.clientX, y: e.clientY };
       return;
     }
-    if (drag) {
-      let p = toWorld(e);
-      // snap to nearby endpoints of other walls
-      for (const w of walls) {
-        if (w.id === drag.id) continue;
-        if (dist(p, w.start) < SNAP_DIST) {
-          p = { x: w.start.x, y: w.start.y };
-        }
-        if (dist(p, w.end) < SNAP_DIST) {
-          p = { x: w.end.x, y: w.end.y };
-        }
+    if (!drag) return;
+    onMoveEndpoint(drag.id, drag.which, snapDrag(toWorld(e)));
+  };
+
+  // Resolve the final world-space position for a dragged endpoint: snap to a
+  // nearby endpoint if any is in range, otherwise fall back to a T-junction
+  // snap onto the nearest wall centerline. Thresholds are in screen pixels
+  // and converted to world units via the current zoom so snapping behaves
+  // the same at any zoom level. The wall being dragged never snaps to itself.
+  const snapDrag = (p: Point): Point => {
+    if (!drag) return p;
+    const endpointSnap = ENDPOINT_SNAP_PX / viewport.scale;
+    const tjunctionSnap = TJUNCTION_SNAP_PX / viewport.scale;
+
+    let bestEndpoint: { point: Point; distance: number } | null = null;
+    let bestCenterline: { point: Point; distance: number } | null = null;
+
+    for (const w of walls) {
+      if (w.id === drag.id) continue;
+
+      const dStart = dist(p, w.start);
+      if (dStart < endpointSnap && (!bestEndpoint || dStart < bestEndpoint.distance)) {
+        bestEndpoint = { point: { x: w.start.x, y: w.start.y }, distance: dStart };
       }
-      onMoveEndpoint(drag.id, drag.which, p);
+
+      const dEnd = dist(p, w.end);
+      if (dEnd < endpointSnap && (!bestEndpoint || dEnd < bestEndpoint.distance)) {
+        bestEndpoint = { point: { x: w.end.x, y: w.end.y }, distance: dEnd };
+      }
+
+      // skip centerline work once an endpoint is in range; endpoints win
+      if (bestEndpoint) continue;
+
+      const proj = projectPointOnSegment(p, w.start, w.end);
+      if (proj.distance < tjunctionSnap && (!bestCenterline || proj.distance < bestCenterline.distance)) {
+        bestCenterline = proj;
+      }
     }
+
+    if (bestEndpoint) return bestEndpoint.point;
+    if (bestCenterline) return bestCenterline.point;
+    return p;
   };
 
   const handlePointerUp = () => {
@@ -115,7 +143,7 @@ export function Editor({ walls, selectedId, tool, onSelect, onMoveEndpoint }: Ed
     <div className="editor">
       <svg
         ref={svgRef}
-        className="editor-svg"
+        className={drag ? 'editor-svg dragging' : 'editor-svg'}
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -136,6 +164,7 @@ export function Editor({ walls, selectedId, tool, onSelect, onMoveEndpoint }: Ed
           {selected && (
             <>
               <circle
+                className="drag-handle"
                 cx={selected.start.x}
                 cy={selected.start.y}
                 r={0.35}
@@ -148,6 +177,7 @@ export function Editor({ walls, selectedId, tool, onSelect, onMoveEndpoint }: Ed
                 }}
               />
               <circle
+                className="drag-handle"
                 cx={selected.end.x}
                 cy={selected.end.y}
                 r={0.35}
