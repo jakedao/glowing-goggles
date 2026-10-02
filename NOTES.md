@@ -150,6 +150,10 @@ snapping must still win when both are in range." The loop records the
 best endpoint and best centerline separately and returns the endpoint
 candidate first.
 
+## AI TOOL used.
+Tool: Copilots 
+I built the instruction based on the Requirements then every prompt will pass to and aligning with appropriate skills designed
+
 ## THOUGHS ABOUT THE ASSIGNMENTS.
 Very clean interface, but each item probes a different real skill — I liked that.
 Short, well-scoped, and genuinely diagnostic. Good test in overall
