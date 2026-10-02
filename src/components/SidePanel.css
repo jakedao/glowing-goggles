@@ -1,8 +1,8 @@
 .panel {
   width: 240px;
-  background: #e4e4e4;
+  background: #ececec;
   border-left: 1px solid #bbbbbb;
-  padding: 4px;
+  padding: 6px 4px 4px;
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -20,3 +20,34 @@
   margin-top: 10px;
   margin-bottom: 2px;
 }
+
+.field-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+.thickness-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.panel .row {
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.panel .row:hover {
+  background: #eef2f6;
+}
+
+.panel .row.selected {
+  background: #dcebf9;
+}
+
